@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - Mạnh Tường Vinasoftware</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateX(-10px);
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateX(10px);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-cyan-50 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Brand Header -->
+        <div class="text-center mb-8 fade-in">
+            <div class="inline-block bg-cyan-600 p-4 rounded-2xl shadow-lg mb-4 floating">
+                <i class="fas fa-user-shield text-white text-4xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Mạnh Tường Vinasoftware</h1>
+            <p class="text-gray-600">Hệ thống quản lý khách hàng chuyên nghiệp</p>
+        </div>
+
+        <!-- Login Card -->
+        <div id="loginCard" class="bg-white rounded-2xl shadow-xl p-8 fade-in">
+            <div class="text-center mb-6">
+                <img src="https://ui-avatars.com/api/?name=Manh+Tuong&size=100&background=0891b2&color=fff&bold=true"
+                    alt="Avatar" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-cyan-100 shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-800">Đăng Nhập</h2>
+                <p class="text-gray-500 text-sm">Vui lòng nhập thông tin đăng nhập</p>
+            </div>
+
+            <!-- Alert Message -->
+            <div id="alertBox" class="hidden mb-4 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <i id="alertIcon" class="mr-3 text-xl"></i>
+                    <span id="alertMessage"></span>
+                </div>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <!-- Username -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-user mr-2 text-cyan-600"></i>Tài khoản
+                    </label>
+                    <input type="text" id="username"
+                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-all"
+                        placeholder="Nhập tài khoản" required autocomplete="username">
+                </div>
+
+                <!-- Password -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">
+                        <i class="fas fa-lock mr-2 text-indigo-600"></i>Mật khẩu
+                    </label>
+                    <div class="relative">
+                        <input type="password" id="password"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-all pr-12"
+                            placeholder="Nhập mật khẩu" required autocomplete="current-password">
+                        <button type="button" onclick="togglePassword()"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i id="eyeIcon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember & Forgot -->
+                <div class="flex items-center justify-between mb-6">
+                    <label class="flex items-center text-sm text-gray-600 cursor-pointer">
+                        <input type="checkbox" id="rememberMe" class="mr-2 w-4 h-4 text-indigo-600">
+                        Ghi nhớ đăng nhập
+                    </label>
+                    <button type="button" onclick="showForgotPassword()"
+                        class="text-sm text-indigo-600 hover:text-indigo-700 font-semibold">
+                        Quên mật khẩu?
+                    </button>
+                </div>
+
+                <!-- Login Button -->
+                <button type="submit" id="loginBtn"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Đăng Nhập
+                </button>
+            </form>
+
+            <!-- IP Block Warning -->
+            <div id="blockWarning" class="hidden mt-4 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl mr-3 mt-1"></i>
+                    <div>
+                        <p class="font-bold text-red-800">Tài khoản bị khóa tạm thời!</p>
+                        <p class="text-sm text-red-600 mt-1">Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau
+                            <span id="blockTimer" class="font-bold">5:00</span> phút.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attempts Counter -->
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <i class="fas fa-info-circle mr-1"></i>
+                Còn <span id="attemptsLeft" class="font-bold text-indigo-600">3</span> lần thử
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div id="forgotModal"
+            class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 fade-in">
+                <div class="text-center mb-6">
+                    <div class="inline-block bg-indigo-100 p-4 rounded-full mb-4">
+                        <i class="fas fa-key text-indigo-600 text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Quên Mật Khẩu?</h3>
+                    <p class="text-gray-600 text-sm">Liên hệ quản trị viên để được hỗ trợ</p>
+                </div>
+
+                <div class="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-envelope text-indigo-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="text-sm text-gray-600">Email hỗ trợ</p>
+                            <p class="font-bold text-gray-800">support@vinasoftware.vn</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-phone text-indigo-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="text-sm text-gray-600">Hotline</p>
+                            <p class="font-bold text-gray-800">1900 xxxx</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="closeForgotModal()"
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg transition-all">
+                    <i class="fas fa-times mr-2"></i>Đóng
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-gray-500 text-sm">
+            <p>© 2024 Mạnh Tường Vinasoftware. All rights reserved.</p>
+            <p class="mt-2">
+                <i class="fas fa-shield-alt mr-1"></i>
+                Hệ thống được bảo mật và mã hóa
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Mã hóa Base64 nhiều lần để khó đọc hơn
+     // Mã hóa Base64 kép để bảo mật
+const AUTH_DATA = 'YldGdWFIUjFiMjVuY3pvdE1USXplbU5qTVRJeg==';
+
+function decodeAuth() {
+    try {
+        // Giải mã lần 1
+        const step1 = atob('bWFuaHR1b25nczoxMjN6eGMxMjM='); // manhtuongs:123zxc123
+        const [u, p] = step1.split(':');
+        return {username: u, password: p};
+    } catch {
+        return null;
+    }
+}
+        const MAX_ATTEMPTS = 3;
+        const BLOCK_TIME = 5 * 60 * 1000; // 5 minutes
+
+        let attempts = parseInt(sessionStorage.getItem('loginAttempts')) || 0;
+        let blockUntil = parseInt(sessionStorage.getItem('blockUntil')) || 0;
+        let blockTimer = null;
+
+        function init() {
+            // Check if already logged in
+            if (sessionStorage.getItem('isLoggedIn')) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Check if blocked
+            checkBlockStatus();
+            updateAttemptsDisplay();
+
+            // Check remember me
+            const remembered = localStorage.getItem('rememberedUser');
+            if (remembered) {
+                document.getElementById('username').value = remembered;
+                document.getElementById('rememberMe').checked = true;
+            }
+        }
+
+        function checkBlockStatus() {
+            const now = Date.now();
+            if (blockUntil > now) {
+                showBlockWarning();
+                startBlockTimer();
+                document.getElementById('loginBtn').disabled = true;
+                document.getElementById('loginBtn').classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (blockUntil > 0) {
+                // Block time expired, reset
+                sessionStorage.removeItem('blockUntil');
+                sessionStorage.removeItem('loginAttempts');
+                attempts = 0;
+                updateAttemptsDisplay();
+            }
+        }
+
+        function showBlockWarning() {
+            document.getElementById('blockWarning').classList.remove('hidden');
+        }
+
+        function startBlockTimer() {
+            const updateTimer = () => {
+                const now = Date.now();
+                const remaining = blockUntil - now;
+
+                if (remaining <= 0) {
+                    clearInterval(blockTimer);
+                    location.reload();
+                    return;
+                }
+
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                document.getElementById('blockTimer').textContent =
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            };
+
+            updateTimer();
+            blockTimer = setInterval(updateTimer, 1000);
+        }
+
+        function updateAttemptsDisplay() {
+            const left = MAX_ATTEMPTS - attempts;
+            document.getElementById('attemptsLeft').textContent = left;
+            if (left <= 1) {
+                document.getElementById('attemptsLeft').classList.add('text-red-600');
+                document.getElementById('attemptsLeft').classList.remove('text-indigo-600');
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            // Validate
+            if (!username || !password) {
+                showAlert('error', 'Vui lòng nhập đầy đủ thông tin!');
+                return;
+            }
+
+            // Check credentials
+            const auth = decodeAuth();
+            if (auth && username === auth.username && password === auth.password) {
+                // Success
+                showAlert('success', 'Đăng nhập thành công! Đang chuyển hướng...');
+
+                // Save session
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.removeItem('loginAttempts');
+                sessionStorage.removeItem('blockUntil');
+
+                // Remember me
+                if (rememberMe) {
+                    localStorage.setItem('rememberedUser', username);
+                } else {
+                    localStorage.removeItem('rememberedUser');
+                }
+
+                // Redirect
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                // Failed
+                attempts++;
+                sessionStorage.setItem('loginAttempts', attempts);
+
+                if (attempts >= MAX_ATTEMPTS) {
+                    // Block user
+                    blockUntil = Date.now() + BLOCK_TIME;
+                    sessionStorage.setItem('blockUntil', blockUntil);
+
+                    showAlert('error', 'Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần!');
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    const left = MAX_ATTEMPTS - attempts;
+                    showAlert('error', `Sai tài khoản hoặc mật khẩu! Còn ${left} lần thử.`);
+                    updateAttemptsDisplay();
+
+                    // Shake animation
+                    document.getElementById('loginCard').classList.add('shake');
+                    setTimeout(() => {
+                        document.getElementById('loginCard').classList.remove('shake');
+                    }, 500);
+                }
+            }
+        }
+
+        function showAlert(type, message) {
+            const alertBox = document.getElementById('alertBox');
+            const alertIcon = document.getElementById('alertIcon');
+            const alertMessage = document.getElementById('alertMessage');
+
+            alertBox.classList.remove('hidden', 'bg-red-50', 'border-red-200', 'bg-green-50', 'border-green-200');
+            alertIcon.classList.remove('fas', 'fa-times-circle', 'text-red-600', 'fa-check-circle', 'text-green-600');
+
+            if (type === 'error') {
+                alertBox.classList.add('bg-red-50', 'border-red-200', 'border-2');
+                alertIcon.classList.add('fas', 'fa-times-circle', 'text-red-600');
+            } else {
+                alertBox.classList.add('bg-green-50', 'border-green-200', 'border-2');
+                alertIcon.classList.add('fas', 'fa-check-circle', 'text-green-600');
+            }
+
+            alertMessage.textContent = message;
+            alertBox.classList.remove('hidden');
+
+            // Auto hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertBox.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
+
+        function showForgotPassword() {
+            document.getElementById('forgotModal').classList.remove('hidden');
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgotModal').classList.add('hidden');
+        }
+
+        // Enter key to submit
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('forgotModal').classList.contains('hidden')) {
+                closeForgotModal();
+            }
+        });
+
+        // Initialize
+        init();
+    </script>
+</body>
+
+</html>

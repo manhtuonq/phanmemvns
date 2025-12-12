@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Khách Hàng Mạnh Tường</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-down {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .tab-active {
+            background: #0891b2;
+            color: white;
+            box-shadow: 0 4px 6px rgba(8, 145, 178, 0.4);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .gradient-bg {
+            background: #0891b2;
+            /* Cyan-600 - xanh nước biển */
+        }
+
+        .row-highlight-green {
+            background-color: #d1fae5 !important;
+        }
+
+        .row-highlight-red {
+            background-color: #fee2e2 !important;
+        }
+
+        .row-highlight-yellow {
+            background-color: #fef3c7 !important;
+        }
+
+        .row-highlight-blue {
+            background-color: #dbeafe !important;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease-out;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .coin-animation {
+            animation: coinFloat 0.5s ease-out;
+        }
+
+        @keyframes coinFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: translateY(-30px) scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-50px) scale(0.8);
+                opacity: 0;
+            }
+        }
+
+        .point-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
+    <!-- Premium Header -->
+    <div class="bg-white text-gray-800 shadow-2xl sticky top-0 z-50 border-b-4 border-cyan-500">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="bg-cyan-500 p-3 rounded-xl">
+                        <i class="fas fa-users-cog text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Quản Lý Khách Hàng Mạnh Tường</h1>
+                        <p class="text-sm text-gray-600">Hệ thống quản lý chuyên nghiệp</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Notification Bell -->
+                    <button onclick="toggleReminders()"
+                        class="relative bg-cyan-500 hover:bg-cyan-600 p-3 rounded-xl transition-all h-14 w-14 flex items-center justify-center">
+                        <i class="fas fa-bell text-xl text-white"></i>
+                        <span id="reminderBadge"
+                            class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">0</span>
+                    </button>
+
+                    <!-- Dropdown Xuất Excel -->
+                    <div class="relative dropdown-container">
+                        <button onclick="toggleExcelDropdown()"
+                            class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-3 rounded-xl transition-all h-14 flex items-center gap-2">
+                            <i class="fas fa-file-excel"></i>
+                            <span class="font-semibold">Xuất Excel</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="excelDropdown"
+                            class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl z-50 border-2 border-gray-100">
+                            <button onclick="exportToExcel(); closeExcelDropdown();"
+                                class="w-full text-left px-4 py-3 hover:bg-cyan-50 flex items-center text-gray-700 rounded-t-xl transition-all">
+                                <i class="fas fa-file-excel text-green-600 mr-3 text-lg"></i>
+                                <span class="font-semibold">Xuất Tất Cả</span>
+                            </button>
+                            <button onclick="exportPotentialCustomers(); closeExcelDropdown();"
+                                class="w-full text-left px-4 py-3 hover:bg-cyan-50 flex items-center text-gray-700 rounded-b-xl border-t transition-all">
+                                <i class="fas fa-star text-yellow-500 mr-3 text-lg"></i>
+                                <span class="font-semibold">Xuất KH Tiềm Năng</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- User Profile -->
+                    <button onclick="toggleProfile()"
+                        class="flex items-center gap-3 bg-gradient-to-r from-yellow-400 to-orange-400 px-4 py-2 rounded-xl hover:from-yellow-500 hover:to-orange-500 transition-all h-14">
+                        <img src="https://ui-avatars.com/api/?name=User&size=40&background=0891b2&color=fff&bold=true"
+                            alt="Avatar" class="w-9 h-9 rounded-full border-2 border-white shadow-lg">
+                        <div class="text-left">
+                            <p class="text-sm font-bold text-white" id="displayUsername">User</p>
+                            <div class="flex items-center gap-1 bg-white/30 px-2 py-0.5 rounded-full">
+                                <i class="fas fa-coins text-yellow-200 text-xs"></i>
+                                <span class="text-xs font-bold text-white" id="userPoints">0</span>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Tổng KH -->
+                    <div class="bg-cyan-500 px-5 py-3 rounded-xl h-14 flex items-center justify-center">
+                        <span class="text-sm text-white font-semibold mr-2">Tổng:</span>
+                        <span class="text-2xl font-bold text-white" id="headerCount">0</span>
+                    </div>
+
+                    <!-- Nút Đăng Xuất -->
+                    <button onclick="logout()"
+                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-xl transition-all h-14 flex items-center gap-2 font-semibold">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Đăng xuất</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Tabs Navigation -->
+        <div class="glass-effect rounded-2xl shadow-xl p-2 mb-6">
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="switchTab('input')" id="tab-input"
+                    class="tab-active px-6 py-3 rounded-xl font-semibold transition-all">
+                    <i class="fas fa-plus-circle mr-2"></i>Thêm Dữ Liệu
+                </button>
+                <button onclick="switchTab('list')" id="tab-list"
+                    class="px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-all">
+                    <i class="fas fa-list mr-2"></i>Danh Sách
+                </button>
+                <button onclick="switchTab('stats')" id="tab-stats"
+                    class="px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-all">
+                    <i class="fas fa-chart-bar mr-2"></i>Thống Kê
+                </button>
+                <button onclick="switchTab('filter')" id="tab-filter"
+                    class="px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-all">
+                    <i class="fas fa-filter mr-2"></i>Lọc & Tìm
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content: Input -->
+        <div id="content-input" class="animate-slide-down">
+            <div class="glass-effect rounded-2xl shadow-xl p-6 mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-3 rounded-xl text-white">
+                        <i class="fas fa-link text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Nhập Danh Sách Links</h2>
+                        <p class="text-sm text-gray-600">Paste hoặc gõ các links, mỗi link một dòng</p>
+                    </div>
+                </div>
+                <textarea id="linksInput"
+                    class="w-full h-40 p-4 border-2 border-indigo-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 focus:outline-none resize-none transition-all"
+                    placeholder="📌 Dán links vào đây, mỗi link một dòng...
+
+Ví dụ:
+https://maps.google.com/maps?q=shop1
+https://www.facebook.com/page1
+https://youtube.com/watch?v=xxx
+https://example.com
+
+✅ Hỗ trợ tất cả loại link!"></textarea>
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <button onclick="processLinks()"
+                        class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+                        <i class="fas fa-plus-circle mr-2"></i>Thêm Vào Bảng
+                    </button>
+                    <button onclick="clearAll()"
+                        class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+                        <i class="fas fa-trash mr-2"></i>Xóa Tất Cả
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats Preview -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-effect rounded-xl p-4 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Tổng KH</p>
+                            <p class="text-3xl font-bold text-indigo-600" id="quickTotal">0</p>
+                        </div>
+                        <div class="bg-indigo-100 p-3 rounded-lg">
+                            <i class="fas fa-users text-indigo-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-effect rounded-xl p-4 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Đã Chốt</p>
+                            <p class="text-3xl font-bold text-green-600" id="quickSuccess">0</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg">
+                            <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-effect rounded-xl p-4 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Chưa XL</p>
+                            <p class="text-3xl font-bold text-orange-600" id="quickPending">0</p>
+                        </div>
+                        <div class="bg-orange-100 p-3 rounded-lg">
+                            <i class="fas fa-clock text-orange-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-effect rounded-xl p-4 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Tỷ Lệ Chốt</p>
+                            <p class="text-3xl font-bold text-purple-600" id="quickConversion">0%</p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-lg">
+                            <i class="fas fa-percentage text-purple-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: List -->
+        <div id="content-list" class="hidden">
+            <div class="glass-effect rounded-2xl shadow-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-table mr-2 text-indigo-600"></i>
+                        Danh Sách Khách Hàng (<span id="count">0</span>)
+                    </h2>
+                    <div id="paginationTop" class="flex items-center gap-2"></div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="gradient-bg text-white">
+                                <th class="p-3 text-left">#</th>
+                                <th class="p-3 text-left">Tên/Nguồn</th>
+                                <th class="p-3 text-left">Link</th>
+                                <th class="p-3 text-left">Trạng Thái</th>
+                                <th class="p-3 text-left">Ghi Chú</th>
+                                <th class="p-3 text-center">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="paginationBottom" class="mt-6 flex justify-center items-center gap-2"></div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Stats -->
+        <div id="content-stats" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="glass-effect rounded-2xl shadow-xl p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-chart-pie mr-2 text-indigo-600"></i>
+                        Thống Kê Theo Trạng Thái
+                    </h3>
+                    <div id="statusStatsGrid" class="space-y-3"></div>
+                </div>
+
+                <div class="glass-effect rounded-2xl shadow-xl p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-link mr-2 text-purple-600"></i>
+                        Thống Kê Theo Loại Link
+                    </h3>
+                    <div id="typeStatsGrid" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-2xl shadow-xl p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-trophy mr-2 text-yellow-600"></i>
+                    Hiệu Suất Chốt Đơn
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div
+                        class="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl p-6 border-2 border-green-200">
+                        <p class="text-sm text-gray-600 mb-1">Tỷ Lệ Thành Công</p>
+                        <p class="text-4xl font-bold text-green-600" id="statsConversionRate">0%</p>
+                        <p class="text-xs text-gray-500 mt-2">Khách đã đồng ý / Tổng khách</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border-2 border-blue-200">
+                        <p class="text-sm text-gray-600 mb-1">Đang Xử Lý</p>
+                        <p class="text-4xl font-bold text-blue-600" id="statsProcessing">0</p>
+                        <p class="text-xs text-gray-500 mt-2">Chờ gọi lại + Đang bận</p>
+                    </div>
+                    <div
+                        class="bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl p-6 border-2 border-orange-200">
+                        <p class="text-sm text-gray-600 mb-1">Chưa Liên Hệ</p>
+                        <p class="text-4xl font-bold text-orange-600" id="statsPendingCount">0</p>
+                        <p class="text-xs text-gray-500 mt-2">Cần xử lý ngay</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Filter -->
+        <div id="content-filter" class="hidden">
+            <div class="glass-effect rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-filter mr-2 text-indigo-600"></i>
+                    Bộ Lọc & Tìm Kiếm
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Lọc theo trạng thái</label>
+                        <select id="filterStatus" onchange="applyFilter()"
+                            class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 focus:outline-none">
+                            <option value="">Tất cả</option>
+                            <option value="Đã đồng ý">Đã đồng ý</option>
+                            <option value="Không có nhu cầu">Không có nhu cầu</option>
+                            <option value="Chờ gọi lại">Chờ gọi lại</option>
+                            <option value="Đang bận">Đang bận</option>
+                            <option value="Có rồi">Có rồi</option>
+                            <option value="Không nghe máy">Không nghe máy</option>
+                            <option value="Quán ăn nhỏ">Quán ăn nhỏ</option>
+                            <option value="Dùng bên thứ 3">Dùng bên thứ 3</option>
+                            <option value="Nhân viên">Nhân viên</option>
+                            <option value="">Chưa xử lý</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Lọc theo loại link</label>
+                        <select id="filterType" onchange="applyFilter()"
+                            class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 focus:outline-none">
+                            <option value="">Tất cả</option>
+                            <option value="maps">Google Maps</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="web">Website</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tìm kiếm</label>
+                        <input type="text" id="searchInput" onkeyup="applyFilter()"
+                            placeholder="Tìm tên, link, ghi chú..."
+                            class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 rounded-xl p-4 mb-4">
+                    <p class="text-sm text-indigo-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Kết quả lọc: <span class="font-bold" id="filterCount">0</span> khách hàng
+                    </p>
+                </div>
+
+                <div id="filterResults" class="overflow-x-auto rounded-xl">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="gradient-bg text-white">
+                                <th class="p-3 text-left">#</th>
+                                <th class="p-3 text-left">Tên/Nguồn</th>
+                                <th class="p-3 text-left">Link</th>
+                                <th class="p-3 text-left">Trạng Thái</th>
+                                <th class="p-3 text-left">Ghi Chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filterTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmation -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 mb-4">
+                    <i class="fas fa-question-circle text-3xl text-indigo-600"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Xác nhận thêm dữ liệu</h3>
+                <p class="text-gray-600">Bạn đã có <span id="existingCount" class="font-bold text-indigo-600">0</span>
+                    links trong hệ thống</p>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="confirmAdd(true)"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all transform hover:scale-105">
+                    <i class="fas fa-plus-circle mr-2"></i>Thêm link mới (Giữ dữ liệu cũ)
+                </button>
+                <button onclick="confirmAdd(false)"
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all transform hover:scale-105">
+                    <i class="fas fa-sync-alt mr-2"></i>Thêm lại từ đầu (Xóa dữ liệu cũ)
+                </button>
+                <button onclick="closeModal()"
+                    class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all">
+                    <i class="fas fa-times mr-2"></i>Hủy
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content max-w-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-user-circle text-cyan-600 mr-3"></i>Hồ Sơ Người Dùng
+                </h3>
+                <button onclick="closeProfile()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- User Info -->
+                <div class="bg-gradient-to-br from-cyan-50 to-blue-100 rounded-xl p-6">
+                    <div class="text-center mb-4">
+                        <img src="https://ui-avatars.com/api/?name=User&size=100&background=0891b2&color=fff&bold=true"
+                            alt="Avatar" class="w-24 h-24 rounded-full mx-auto border-4 border-white shadow-lg mb-3">
+                        <h4 class="text-xl font-bold text-gray-800" id="profileUsername">User</h4>
+                        <p class="text-sm text-gray-600">Nhân viên Marketing</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">Tổng điểm:</span>
+                            <span class="text-2xl font-bold text-cyan-600 flex items-center gap-1">
+                                <i class="fas fa-coins text-yellow-500"></i>
+                                <span id="profilePoints">0</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Khách hàng đã chốt:</span>
+                            <span class="text-lg font-bold text-green-600" id="profileSuccess">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rewards -->
+                <div>
+                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-gift text-yellow-500 mr-2"></i>Đổi Thưởng
+                    </h4>
+                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                        <!-- Reward Items -->
+                        <div
+                            class="bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-cyan-400 transition-all cursor-pointer">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-orange-100 p-2 rounded-lg">
+                                        <i class="fas fa-coffee text-orange-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Cà phê Starbucks</p>
+                                        <p class="text-xs text-gray-500">Ly size M</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-cyan-600 flex items-center gap-1">
+                                        <i class="fas fa-coins text-yellow-500 text-sm"></i>50
+                                    </p>
+                                    <button
+                                        class="text-xs bg-cyan-600 text-white px-2 py-1 rounded mt-1 hover:bg-cyan-700">Đổi</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-cyan-400 transition-all cursor-pointer">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-red-100 p-2 rounded-lg">
+                                        <i class="fas fa-pizza-slice text-red-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Pizza Combo</p>
+                                        <p class="text-xs text-gray-500">Size M + Nước</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-cyan-600 flex items-center gap-1">
+                                        <i class="fas fa-coins text-yellow-500 text-sm"></i>150
+                                    </p>
+                                    <button
+                                        class="text-xs bg-cyan-600 text-white px-2 py-1 rounded mt-1 hover:bg-cyan-700">Đổi</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-cyan-400 transition-all cursor-pointer">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-purple-100 p-2 rounded-lg">
+                                        <i class="fas fa-film text-purple-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Vé xem phim</p>
+                                        <p class="text-xs text-gray-500">CGV/Lotte</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-cyan-600 flex items-center gap-1">
+                                        <i class="fas fa-coins text-yellow-500 text-sm"></i>200
+                                    </p>
+                                    <button
+                                        class="text-xs bg-cyan-600 text-white px-2 py-1 rounded mt-1 hover:bg-cyan-700">Đổi</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-cyan-400 transition-all cursor-pointer">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-green-100 p-2 rounded-lg">
+                                        <i class="fas fa-headphones text-green-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Tai nghe Bluetooth</p>
+                                        <p class="text-xs text-gray-500">Chất lượng cao</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-cyan-600 flex items-center gap-1">
+                                        <i class="fas fa-coins text-yellow-500 text-sm"></i>500
+                                    </p>
+                                    <button
+                                        class="text-xs bg-cyan-600 text-white px-2 py-1 rounded mt-1 hover:bg-cyan-700">Đổi</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-cyan-400 transition-all cursor-pointer">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-blue-100 p-2 rounded-lg">
+                                        <i class="fas fa-umbrella-beach text-blue-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Tour Du lịch 2N1Đ</p>
+                                        <p class="text-xs text-gray-500">Vũng Tàu/Phan Thiết</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-cyan-600 flex items-center gap-1">
+                                        <i class="fas fa-coins text-yellow-500 text-sm"></i>1000
+                                    </p>
+                                    <button
+                                        class="text-xs bg-cyan-600 text-white px-2 py-1 rounded mt-1 hover:bg-cyan-700">Đổi</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let customers = [];
+        let currentPage = 1;
+        let currentTab = 'input';
+        let filteredCustomers = [];
+        let pendingLinks = [];
+        const itemsPerPage = 15;
+        let userPoints = parseInt(sessionStorage.getItem('userPoints')) || 0;
+        let processedPages = JSON.parse(sessionStorage.getItem('processedPages')) || [];
+        // Check authentication
+        function checkAuth() {
+            const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+            if (!isLoggedIn) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        function logout() {
+            if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                sessionStorage.removeItem('isLoggedIn');
+                window.location.href = 'login.html';
+            }
+        }
+        function toggleExcelDropdown() {
+            const dropdown = document.getElementById('excelDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function closeExcelDropdown() {
+            document.getElementById('excelDropdown').classList.add('hidden');
+        }
+
+        // Đóng dropdown khi click bên ngoài
+        document.addEventListener('click', function (event) {
+            const dropdown = document.getElementById('excelDropdown');
+            const container = event.target.closest('.dropdown-container');
+            if (!container && dropdown && !dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+        function switchTab(tab) {
+            currentTab = tab;
+            ['input', 'list', 'stats', 'filter'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('tab-active');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`content-${tab}`).classList.add('animate-slide-down');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+
+            if (tab === 'list') renderTable();
+            if (tab === 'stats') renderStatistics();
+            if (tab === 'filter') applyFilter();
+        }
+
+        function loadFromStorage() {
+            const saved = sessionStorage.getItem('customersData');
+            if (saved) {
+                try {
+                    customers = JSON.parse(saved);
+                    updateQuickStats();
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
+            }
+            userPoints = parseInt(sessionStorage.getItem('userPoints')) || 0;
+            updatePointsDisplay();
+        }
+
+        function saveToStorage() {
+            sessionStorage.setItem('customersData', JSON.stringify(customers));
+            updateQuickStats();
+        }
+
+        function extractName(url) {
+            try {
+                let match = url.match(/\/place\/([^\/\?]+)/);
+                if (match) {
+                    let name = decodeURIComponent(match[1].replace(/\+/g, ' '));
+                    return name.replace(/@.*$/, '').trim() || 'Google Maps';
+                }
+
+                match = url.match(/q=([^&]+)/);
+                if (match) {
+                    return decodeURIComponent(match[1].replace(/\+/g, ' '));
+                }
+
+                if (url.includes('facebook.com')) {
+                    const fbMatch = url.match(/facebook\.com\/([^\/\?]+)/);
+                    return fbMatch ? 'FB: ' + fbMatch[1] : 'Facebook';
+                }
+
+                if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                    return 'YouTube Video';
+                }
+
+                const urlObj = new URL(url);
+                return urlObj.hostname.replace('www.', '');
+            } catch (e) {
+                return 'Link';
+            }
+        }
+
+        function getLinkType(url) {
+            if (url.includes('google.com/maps') || url.includes('goo.gl/maps')) return 'maps';
+            if (url.includes('facebook.com')) return 'facebook';
+            if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+            return 'web';
+        }
+
+        function getLinkIcon(type) {
+            const icons = {
+                maps: 'fa-map-marker-alt text-red-500',
+                facebook: 'fa-facebook text-blue-600',
+                youtube: 'fa-youtube text-red-600',
+                web: 'fa-globe text-gray-600'
+            };
+            return icons[type] || icons.web;
+        }
+
+        function processLinks() {
+            const input = document.getElementById('linksInput');
+            const text = input.value;
+            const links = text.split('\n').filter(link => link.trim() !== '');
+
+            if (links.length === 0) {
+                alert('⚠️ Vui lòng nhập ít nhất 1 link!');
+                return;
+            }
+
+            pendingLinks = [];
+            links.forEach(link => {
+                const trimmed = link.trim();
+                if (trimmed.startsWith('http')) {
+                    pendingLinks.push({
+                        link: trimmed,
+                        name: extractName(trimmed),
+                        type: getLinkType(trimmed),
+                        status: '',
+                        note: '',
+                        addedDate: new Date().toISOString()
+                    });
+                }
+            });
+
+            if (pendingLinks.length === 0) {
+                alert('⚠️ Không tìm thấy link hợp lệ! Link phải bắt đầu bằng http:// hoặc https://');
+                return;
+            }
+
+            if (customers.length > 0) {
+                document.getElementById('existingCount').textContent = customers.length;
+                document.getElementById('confirmModal').classList.add('active');
+            } else {
+                confirmAdd(true);
+            }
+        }
+
+        function confirmAdd(keepExisting) {
+            if (!keepExisting) {
+                customers = [];
+            }
+
+            customers = customers.concat(pendingLinks);
+            const input = document.getElementById('linksInput');
+            input.value = '';
+
+            saveToStorage();
+            closeModal();
+
+            alert(`✅ Đã thêm ${pendingLinks.length} links vào hệ thống!\n📊 Tổng: ${customers.length} links`);
+            currentPage = 1;
+            pendingLinks = [];
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            pendingLinks = [];
+        }
+
+        function getStatusConfig() {
+            return {
+                'Đã đồng ý': { color: 'bg-green-500', text: 'Đồng ý', icon: 'fa-check', bgClass: 'bg-green-100', textClass: 'text-green-700', rowClass: 'row-highlight-green' },
+                'Không có nhu cầu': { color: 'bg-red-500', text: 'Từ chối', icon: 'fa-times', bgClass: 'bg-red-100', textClass: 'text-red-700', rowClass: 'row-highlight-red' },
+                'Chờ gọi lại': { color: 'bg-yellow-500', text: 'Chờ lại', icon: 'fa-clock', bgClass: 'bg-yellow-100', textClass: 'text-yellow-700', rowClass: 'row-highlight-yellow' },
+                'Đang bận': { color: 'bg-orange-500', text: 'Bận', icon: 'fa-phone-slash', bgClass: 'bg-orange-100', textClass: 'text-orange-700', rowClass: '' },
+                'Có rồi': { color: 'bg-purple-500', text: 'Có rồi', icon: 'fa-check-double', bgClass: 'bg-purple-100', textClass: 'text-purple-700', rowClass: '' },
+                'Không nghe máy': { color: 'bg-gray-500', text: 'Ko nghe', icon: 'fa-phone-volume', bgClass: 'bg-gray-100', textClass: 'text-gray-700', rowClass: '' },
+                'Quán ăn nhỏ': { color: 'bg-pink-500', text: 'Quán nhỏ', icon: 'fa-store', bgClass: 'bg-pink-100', textClass: 'text-pink-700', rowClass: '' },
+                'Dùng bên thứ 3': { color: 'bg-teal-500', text: 'Bên 3', icon: 'fa-users', bgClass: 'bg-teal-100', textClass: 'text-teal-700', rowClass: '' },
+                'Nhân viên': { color: 'bg-cyan-500', text: 'NV', icon: 'fa-user', bgClass: 'bg-cyan-100', textClass: 'text-cyan-700', rowClass: '' }
+            };
+        }
+
+        function setStatus(index, status) {
+    const realIndex = (currentPage - 1) * itemsPerPage + index;
+    customers[realIndex].status = status;
+    saveToStorage();
+    renderTable();
+    
+    // Kiểm tra xem trang hiện tại đã hoàn thành chưa (sau 500ms để đảm bảo render xong)
+    setTimeout(() => {
+        checkPageCompletion();
+    }, 500);
+}
+
+        function updateNote(index, note) {
+            const realIndex = (currentPage - 1) * itemsPerPage + index;
+            customers[realIndex].note = note;
+            saveToStorage();
+        }
+
+        function deleteCustomer(index) {
+            if (confirm('❌ Xóa khách hàng này?')) {
+                const realIndex = (currentPage - 1) * itemsPerPage + index;
+                customers.splice(realIndex, 1);
+                saveToStorage();
+
+                const totalPages = Math.ceil(customers.length / itemsPerPage);
+                if (currentPage > totalPages && totalPages > 0) {
+                    currentPage = totalPages;
+                }
+
+                renderTable();
+            }
+        }
+
+        function clearAll() {
+            if (confirm('⚠️ XÓA TẤT CẢ dữ liệu? Hành động này không thể hoàn tác!')) {
+                customers = [];
+                currentPage = 1;
+                saveToStorage();
+                renderTable();
+            }
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(customers.length / itemsPerPage);
+            if (totalPages <= 1) {
+                document.getElementById('paginationTop').innerHTML = '';
+                document.getElementById('paginationBottom').innerHTML = '';
+                return;
+            }
+
+            let html = `
+                <button onclick="goToPage(${currentPage - 1})" 
+                    ${currentPage === 1 ? 'disabled' : ''}
+                    class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed hover:shadow-lg transition-all">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="px-4 py-2 bg-white rounded-lg shadow font-semibold text-gray-700">
+                    ${currentPage} / ${totalPages}
+                </span>
+                <button onclick="goToPage(${currentPage + 1})" 
+                    ${currentPage === totalPages ? 'disabled' : ''}
+                    class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed hover:shadow-lg transition-all">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+
+            document.getElementById('paginationTop').innerHTML = html;
+            document.getElementById('paginationBottom').innerHTML = html;
+        }
+
+        function updateQuickStats() {
+            const total = customers.length;
+            const success = customers.filter(c => c.status === 'Đã đồng ý').length;
+            const pending = customers.filter(c => !c.status).length;
+            const conversion = total > 0 ? ((success / total) * 100).toFixed(1) : 0;
+
+            document.getElementById('quickTotal').textContent = total;
+            document.getElementById('quickSuccess').textContent = success;
+            document.getElementById('quickPending').textContent = pending;
+            document.getElementById('quickConversion').textContent = conversion + '%';
+            document.getElementById('headerCount').textContent = total;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const statusConfig = getStatusConfig();
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageCustomers = customers.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageCustomers.map((customer, index) => {
+                const config = customer.status ? statusConfig[customer.status] : null;
+                const rowClass = config ? config.rowClass : '';
+
+                return `
+                <tr class="border-b hover:bg-indigo-50 transition-colors ${rowClass}">
+                    <td class="p-3 font-bold text-gray-700">${startIndex + index + 1}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fas ${getLinkIcon(customer.type)} text-lg"></i>
+                            <span class="font-semibold text-gray-800">${customer.name}</span>
+                        </div>
+                    </td>
+                    <td class="p-3">
+                        <a href="${customer.link}" target="_blank" 
+                           class="inline-flex items-center gap-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1 rounded-lg transition-all text-sm font-medium">
+                            <i class="fas fa-external-link-alt"></i>
+                            Mở Link
+                        </a>
+                    </td>
+                    <td class="p-3">
+                        <select onchange="setStatus(${index}, this.value)" 
+                            class="w-full p-2 border-2 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none ${customer.status ? 'font-bold' : ''}">
+                            <option value="">-- Chọn trạng thái --</option>
+                            ${Object.entries(statusConfig).map(([status, config]) => `
+                                <option value="${status}" ${customer.status === status ? 'selected' : ''}>
+                                    ${status}
+                                </option>
+                            `).join('')}
+                        </select>
+                        ${customer.status ? `<div class="status-badge ${statusConfig[customer.status].bgClass} ${statusConfig[customer.status].textClass} mt-2">
+                            <i class="fas ${statusConfig[customer.status].icon}"></i>
+                            ${customer.status}
+                        </div>` : ''}
+                    </td>
+                    <td class="p-3">
+                        <textarea 
+                            onchange="updateNote(${index}, this.value)"
+                            placeholder="Thêm ghi chú..."
+                            rows="2"
+                            class="w-full p-2 border-2 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none text-sm"
+                        >${customer.note}</textarea>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button 
+                            onclick="deleteCustomer(${index})"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all transform hover:scale-105">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+
+            document.getElementById('count').textContent = customers.length;
+            renderPagination();
+        }
+
+        function renderStatistics() {
+            const total = customers.length;
+            const statusConfig = getStatusConfig();
+
+            if (total === 0) return;
+
+            let statusHTML = '';
+            Object.entries(statusConfig).forEach(([status, config]) => {
+                const count = customers.filter(c => c.status === status).length;
+                const percent = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+
+                statusHTML += `
+                    <div class="flex items-center justify-between p-4 rounded-xl ${config.bgClass} border-2 ${config.bgClass.replace('100', '200')}">
+                        <div class="flex items-center gap-3">
+                            <div class="${config.color} p-3 rounded-lg text-white">
+                                <i class="fas ${config.icon} text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold ${config.textClass}">${status}</p>
+                                <p class="text-xs text-gray-600">${percent}% của tổng</p>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-bold ${config.textClass}">${count}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('statusStatsGrid').innerHTML = statusHTML;
+
+            const types = {
+                'maps': { name: 'Google Maps', icon: 'fa-map-marker-alt', color: 'text-red-600', bg: 'bg-red-100' },
+                'facebook': { name: 'Facebook', icon: 'fa-facebook', color: 'text-blue-600', bg: 'bg-blue-100' },
+                'youtube': { name: 'YouTube', icon: 'fa-youtube', color: 'text-red-700', bg: 'bg-red-100' },
+                'web': { name: 'Website', icon: 'fa-globe', color: 'text-gray-600', bg: 'bg-gray-100' }
+            };
+
+            let typeHTML = '';
+            Object.entries(types).forEach(([type, info]) => {
+                const count = customers.filter(c => c.type === type).length;
+                const percent = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+
+                typeHTML += `
+                    <div class="flex items-center justify-between p-4 rounded-xl ${info.bg} border-2 ${info.bg.replace('100', '200')}">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-white p-3 rounded-lg">
+                                <i class="fas ${info.icon} text-xl ${info.color}"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold ${info.color}">${info.name}</p>
+                                <p class="text-xs text-gray-600">${percent}% của tổng</p>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-bold ${info.color}">${count}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('typeStatsGrid').innerHTML = typeHTML;
+
+            const agree = customers.filter(c => c.status === 'Đã đồng ý').length;
+            const processing = customers.filter(c => c.status === 'Chờ gọi lại' || c.status === 'Đang bận').length;
+            const pending = customers.filter(c => !c.status).length;
+            const conversion = total > 0 ? ((agree / total) * 100).toFixed(1) : 0;
+
+            document.getElementById('statsConversionRate').textContent = conversion + '%';
+            document.getElementById('statsProcessing').textContent = processing;
+            document.getElementById('statsPendingCount').textContent = pending;
+        }
+
+        function applyFilter() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const typeFilter = document.getElementById('filterType').value;
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredCustomers = customers.filter(customer => {
+                const matchStatus = !statusFilter || customer.status === statusFilter || (statusFilter === '' && !customer.status);
+                const matchType = !typeFilter || customer.type === typeFilter;
+                const matchSearch = !searchText ||
+                    customer.name.toLowerCase().includes(searchText) ||
+                    customer.link.toLowerCase().includes(searchText) ||
+                    customer.note.toLowerCase().includes(searchText);
+
+                return matchStatus && matchType && matchSearch;
+            });
+
+            document.getElementById('filterCount').textContent = filteredCustomers.length;
+            renderFilterResults();
+        }
+
+        function renderFilterResults() {
+            const tbody = document.getElementById('filterTableBody');
+            const statusConfig = getStatusConfig();
+
+            if (filteredCustomers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500"><i class="fas fa-search text-4xl mb-2"></i><br>Không tìm thấy kết quả</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredCustomers.map((customer, index) => {
+                const config = customer.status ? statusConfig[customer.status] : null;
+                return `
+                <tr class="border-b hover:bg-indigo-50 transition-colors">
+                    <td class="p-3 font-bold text-gray-700">${index + 1}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fas ${getLinkIcon(customer.type)}"></i>
+                            <span class="font-semibold text-gray-800">${customer.name}</span>
+                        </div>
+                    </td>
+                    <td class="p-3">
+                        <a href="${customer.link}" target="_blank" 
+                           class="text-indigo-600 hover:underline text-sm">
+                            <i class="fas fa-external-link-alt mr-1"></i>Mở
+                        </a>
+                    </td>
+                    <td class="p-3">
+                        ${customer.status ? `<span class="status-badge ${config.bgClass} ${config.textClass}">
+                            <i class="fas ${config.icon}"></i>${customer.status}
+                        </span>` : '<span class="text-gray-400 text-sm">Chưa xử lý</span>'}
+                    </td>
+                    <td class="p-3 text-sm text-gray-600">${customer.note || '-'}</td>
+                </tr>
+            `}).join('');
+        }
+
+        function exportToExcel() {
+            if (customers.length === 0) {
+                alert('⚠️ Chưa có dữ liệu để xuất!');
+                return;
+            }
+
+            try {
+                if (typeof XLSX === 'undefined') {
+                    alert('⏳ Đang tải thư viện Excel, vui lòng thử lại!');
+                    return;
+                }
+
+                const detailData = [
+                    ['STT', 'Loại Link', 'Tên/Nguồn', 'Link', 'Tình Trạng', 'Ghi Chú']
+                ];
+
+                customers.forEach((customer, index) => {
+                    detailData.push([
+                        index + 1,
+                        customer.type.toUpperCase(),
+                        customer.name,
+                        customer.link,
+                        customer.status || 'Chưa xử lý',
+                        customer.note
+                    ]);
+                });
+
+                const wb = XLSX.utils.book_new();
+                const ws_detail = XLSX.utils.aoa_to_sheet(detailData);
+                XLSX.utils.book_append_sheet(wb, ws_detail, 'Danh Sách');
+
+                const date = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `Khach_Hang_${date}.xlsx`);
+
+                alert('✅ Đã xuất file Excel thành công!');
+            } catch (error) {
+                console.error('Lỗi xuất Excel:', error);
+                alert('❌ Có lỗi khi xuất file Excel: ' + error.message);
+            }
+        }
+        function exportPotentialCustomers() {
+            const potentialCustomers = customers.filter(c => c.status === 'Đã đồng ý');
+
+            if (potentialCustomers.length === 0) {
+                alert('⚠️ Chưa có khách hàng tiềm năng (Đã đồng ý)!');
+                return;
+            }
+
+            try {
+                if (typeof XLSX === 'undefined') {
+                    alert('⏳ Đang tải thư viện Excel, vui lòng thử lại!');
+                    return;
+                }
+
+                const data = [
+                    ['STT', 'Loại Link', 'Tên/Nguồn', 'Link', 'Ghi Chú']
+                ];
+
+                potentialCustomers.forEach((customer, index) => {
+                    data.push([
+                        index + 1,
+                        customer.type.toUpperCase(),
+                        customer.name,
+                        customer.link,
+                        customer.note
+                    ]);
+                });
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, 'KH Tiềm Năng');
+
+                const date = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `KH_Tiem_Nang_${date}.xlsx`);
+
+                alert(`✅ Đã xuất ${potentialCustomers.length} khách hàng tiềm năng!`);
+            } catch (error) {
+                console.error('Lỗi xuất Excel:', error);
+                alert('❌ Có lỗi khi xuất file Excel: ' + error.message);
+            }
+        }
+        function updatePointsDisplay() {
+            document.getElementById('userPoints').textContent = userPoints;
+            if (document.getElementById('profilePoints')) {
+                document.getElementById('profilePoints').textContent = userPoints;
+            }
+            sessionStorage.setItem('userPoints', userPoints);
+        }
+
+        function checkPageCompletion() {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageCustomers = customers.slice(startIndex, endIndex);
+
+            // Kiểm tra xem trang này đã được xử lý chưa
+            const pageKey = `page_${currentPage}`;
+            if (processedPages.includes(pageKey)) {
+                return; // Đã tặng xu rồi, không tặng nữa
+            }
+
+            // Kiểm tra tất cả khách hàng trong trang đã có trạng thái chưa
+            const allProcessed = pageCustomers.every(customer => customer.status && customer.status !== '');
+
+            if (allProcessed && pageCustomers.length > 0) {
+                // Tính điểm: mỗi khách = 10 xu
+                const points = pageCustomers.length * 10;
+                userPoints += points;
+                processedPages.push(pageKey);
+
+                sessionStorage.setItem('processedPages', JSON.stringify(processedPages));
+                updatePointsDisplay();
+
+                // Hiệu ứng tặng xu
+                showCoinAnimation(points);
+            }
+        }
+
+        function showCoinAnimation(points) {
+            const coin = document.createElement('div');
+            coin.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 coin-animation';
+            coin.innerHTML = `
+        <div class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-8 py-6 rounded-2xl shadow-2xl text-center border-4 border-yellow-300">
+            <i class="fas fa-coins text-6xl mb-3"></i>
+            <p class="text-3xl font-bold">+${points} XU</p>
+            <p class="text-sm mt-2">🎉 Hoàn thành trang ${currentPage}!</p>
+        </div>
+    `;
+            document.body.appendChild(coin);
+
+            setTimeout(() => {
+                coin.remove();
+            }, 2000);
+        }
+
+        function toggleProfile() {
+            const modal = document.getElementById('profileModal');
+            const username = sessionStorage.getItem('username') || 'User';
+            const success = customers.filter(c => c.status === 'Đã đồng ý').length;
+
+            document.getElementById('displayUsername').textContent = username;
+            document.getElementById('profileUsername').textContent = username;
+            document.getElementById('profilePoints').textContent = userPoints;
+            document.getElementById('profileSuccess').textContent = success;
+
+            modal.classList.add('active');
+        }
+
+        function closeProfile() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        function toggleReminders() {
+            alert('⏰ Chức năng nhắc nhở đang được phát triển!\n\nTính năng sắp có:\n- Nhắc nhở "Chờ gọi lại"\n- Tự động nhắc lúc 14:15\n- Quản lý số điện thoại');
+        }
+        checkAuth();
+        loadFromStorage();
+        updateQuickStats();
+        
+        // Hiển thị username từ session
+        const username = sessionStorage.getItem('username') || 'User';
+        document.getElementById('displayUsername').textContent = username;
+    </script>
+</body>
+
+</html>
