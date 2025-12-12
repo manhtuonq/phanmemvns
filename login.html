@@ -209,14 +209,12 @@
     </div>
 
     <script>
-        // Mã hóa Base64 nhiều lần để khó đọc hơn
-     // Mã hóa Base64 kép để bảo mật
 const AUTH_DATA = 'YldGdWFIUjFiMjVuY3pvdE1USXplbU5qTVRJeg==';
 
 function decodeAuth() {
     try {
         // Giải mã lần 1
-        const step1 = atob('bWFuaHR1b25nczoxMjN6eGMxMjM='); // manhtuongs:123zxc123
+        const step1 = atob('bWFuaHR1b25nczoxMjN6eGMxMjM='); 
         const [u, p] = step1.split(':');
         return {username: u, password: p};
     } catch {
